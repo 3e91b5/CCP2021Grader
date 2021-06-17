@@ -23,7 +23,7 @@ app = Flask(__name__)
 input_path = './input/'
 run_path = './environ/'
 
-dbfile = 'ccp.db'
+dbfile = 'ccp2.db'
 
 app.secret_key = b'\x06\xdcNB\x93\x9e-N\xf0*\x82\xad\x80\x1e\x95\x0e'
 logger = logging.getLogger('werkzeug')
@@ -684,13 +684,13 @@ def run_code(project_name):
 			student_name = result[2]
 			student_id = result[1]
 			code = data_student['code']
-		data_student['val'] = {
-			'score': 0,
-			'details': [],
-			'score_total': 0,
-			'student_name': student_name,
-			'student_id': student_id
-		}
+			data_student['val'] = {
+				'score': 0,
+				'details': [],
+				'score_total': 0,
+				'student_name': student_name,
+				'student_id': student_id
+			}
 
 		with open(os.path.join(run_path, getconfig('run_filename', 'main.py')), 'w') as f:
 			f.write(code)
@@ -714,10 +714,12 @@ def run_code(project_name):
 		
 		max_error = getconfig('max_error')
 		time_limit = getconfig('time_limit')
-
+		print(deduce_wrong)
+		print(data_student['val'])
 		for i in val_set:
 			i[3] = json.loads(i[3])
-
+			
+			# print("is_val_custom:", is_val_custom)
 			result = validator(i[1], i[2], check_num=i[3]['val_mode']['check_num'], check_char=i[3]['val_mode']['check_char'], max_error=max_error, time_limit=time_limit, is_val_custom=is_val_custom)
 			if is_val_custom: #custom score for custom validator
 				data_student['val']['score'] += result['score']
@@ -864,8 +866,8 @@ def validator_real(output, answer, check_num, check_char):
 						correct = 0 #wrong answer
 	elif check_num == False and check_char == True:
 		#remove all numbers
-		out = re.sub(r'-?[0-9.]', r' ', outs)
-		ref = re.sub(r'-?[0-9.]', r' ', output_val)
+		out = re.sub(r'-?[0-9.]', r' ', output)	#jhkim
+		ref = re.sub(r'-?[0-9.]', r' ', answer) #jhkim
 		#remove excessive whitespaces
 		out = re.sub(r'\s+', ' ', out).strip().lower()
 		ref = re.sub(r'\s+', ' ', ref).strip().lower()
@@ -877,8 +879,8 @@ def validator_real(output, answer, check_num, check_char):
 
 	elif check_num == True and check_char == True:
 		#replace whitespaces and lower
-		out = re.sub(r'\s+', ' ', outs).strip().lower()
-		ref = re.sub(r'\s+', ' ', output_val).strip().lower()
+		out = re.sub(r'\s+', ' ', output).strip().lower()	#jhkim
+		ref = re.sub(r'\s+', ' ', answer).strip().lower()	#jhkim
 		if out == ref:
 			correct = 1
 		else:
@@ -889,7 +891,8 @@ def validator(input_val='', output_val='', check_num=True, check_char=True, max_
 	outs, errs, returncode, correct = execute(input_val, time_limit)
 	score_full = 0
 	details = ''
-
+	score = 0	
+	score_full = 0
 	if correct == -1: #not TLE
 
 		if returncode != 0:
@@ -900,7 +903,8 @@ def validator(input_val='', output_val='', check_num=True, check_char=True, max_
 				correct, score, score_full, details = validator_custom(outs, output_val)
 			else:
 				correct = validator_real(outs, output_val, check_num, check_char)
-	
+				
+	# print(returncode, outs, errs, correct, output_val, input_val, score, score_full, details)
 	result = {
 		'result': returncode,
 		'output': outs,
